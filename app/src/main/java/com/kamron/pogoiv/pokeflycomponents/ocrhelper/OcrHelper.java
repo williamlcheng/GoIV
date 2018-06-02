@@ -10,6 +10,7 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.util.Pair;
 import android.util.LruCache;
+import android.util.Log;
 import android.view.Display;
 import android.view.WindowManager;
 
@@ -239,6 +240,9 @@ public class OcrHelper {
             int x = Data.arcX[index];
             int y = Data.arcY[index];
             int whiteLineDistance = getCardinalWhiteLineDistFromImg(pokemonImage, x, y);
+            if (whiteLineDistance > 0){
+                android.util.Log.d("Test", String.format("Level = %.1f, dist = %d", estPokemonLevel, whiteLineDistance));
+            }
 
             // If we found a lower white line distance than our last calculation, last calculation was best match.
             // If the actual level is 1.0, we fall out to the default case below the for loop.
@@ -273,16 +277,21 @@ public class OcrHelper {
         int i1y = y;
         int i2x = x;
         int i2y = y;
+        int dx = 0;
+        int dy = 0;
 
         while (pokemonImage.getPixel(i1x, i1y) == targetColor || pokemonImage.getPixel(i2x, i2y) == targetColor) {
             r++;
             if (angle == null) {
                 angle = Math.atan2(Data.arcInitY - y, Data.arcInitX - x);
+                r++;
             }
-            i1x = (int) Math.round(x + r * Math.cos(angle));
-            i1y = (int) Math.round(y + r * Math.sin(angle));
-            i2x = (int) Math.round(x - r * Math.cos(angle));
-            i2y = (int) Math.round(y - r * Math.sin(angle));
+            dx = (int) Math.round(r * Math.cos(angle));
+            dy = (int) Math.round(r * Math.sin(angle));
+            i1x = x + dx;
+            i1y = y + dy;
+            i2x = x - dx;
+            i2y = y - dy;
             if (i1x < 0 || i1x >= pokemonImage.getWidth()
                     || i1y < 0 || i1y >= pokemonImage.getHeight()
                     || i2x < 0 || i2x >= pokemonImage.getWidth()
@@ -290,6 +299,14 @@ public class OcrHelper {
                 return -1;
             }
         }
+        if (r > 10) {
+            int i3x = x + ((dy>0)? dy : -dy);
+            int i3y = y + ((dy>0)? -dx : dx);
+            int color = pokemonImage.getPixel(i3x, i3y);
+            Log.d("Test", String.format("(%d,%d), (%d,%d), (%d,%d), dist = %d, color = %d", i1x,i1y,i2x,i2y,i3x,i3y,r,
+                    color));
+        }
+
 
         return r;
     }

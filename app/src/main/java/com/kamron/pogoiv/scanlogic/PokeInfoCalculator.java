@@ -7,6 +7,7 @@ import android.content.res.Resources;
 import android.os.Build;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.util.Log;
 
 import com.kamron.pogoiv.GoIVSettings;
 import com.kamron.pogoiv.R;
@@ -259,14 +260,21 @@ public class PokeInfoCalculator {
         double lvlScalarPow2 = Math.pow(lvlScalar, 2) * 0.1; // instead of computing again in every loop
         //IV vars for lower and upper end cp ranges
 
+        int minCp = Math.max(10, (int)Math.floor((baseAttack * lvlScalarPow2 * Math.sqrt((baseDefense*baseStamina)))));
+        int maxCp = Math.max(10, (int)Math.floor(((baseAttack+15) * lvlScalarPow2 * Math.sqrt((
+                (baseDefense+15)*(baseStamina+15))))));
+        int totalDiff = maxCp - minCp;
+        int scanDiff = scanResult.cp - minCp;
+        double percent = scanDiff * 100.0 / totalDiff;
+        Log.d("Test", String.format("%d - %d: %.2f", minCp, maxCp, percent));
         for (int staminaIV = 0; staminaIV < 16; staminaIV++) {
             int hp = (int) Math.max(Math.floor((baseStamina + staminaIV) * lvlScalar), 10);
             if (hp == scanResult.hp) {
                 double lvlScalarStamina = Math.sqrt(baseStamina + staminaIV) * lvlScalarPow2;
                 for (int defenseIV = 0; defenseIV < 16; defenseIV++) {
+                    double lvlScalarStaminaDefense = Math.sqrt(baseDefense + defenseIV) * lvlScalarStamina;
                     for (int attackIV = 0; attackIV < 16; attackIV++) {
-                        int cp = Math.max(10, (int) Math.floor((baseAttack + attackIV) * Math.sqrt(baseDefense
-                                + defenseIV) * lvlScalarStamina));
+                        int cp = Math.max(10, (int) Math.floor((baseAttack + attackIV) * lvlScalarStaminaDefense));
                         if (cp == scanResult.cp) {
                             scanResult.addIVCombination(attackIV, defenseIV, staminaIV);
                         }

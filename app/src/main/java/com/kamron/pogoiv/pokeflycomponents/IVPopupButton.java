@@ -60,8 +60,8 @@ public class IVPopupButton extends android.support.v7.widget.AppCompatButton {
         this.pokefly = pokefly;
 
         // Init button position
-        layoutParams.x = dpToPx(16);
-        layoutParams.y = dpToPx(14);
+        layoutParams.x = dpToPx(20);
+        layoutParams.y = dpToPx(40);
 
         // Start hidden
         setVisibility(GONE);
@@ -94,7 +94,7 @@ public class IVPopupButton extends android.support.v7.widget.AppCompatButton {
     private void resetButtonLook() {
         setTextColor(Color.WHITE);
         setBackgroundResource(R.drawable.iv_button);
-        setWidth(dpToPx(60));
+        setWidth(dpToPx(120));
         setText("");
         setTextAlignment(TEXT_ALIGNMENT_CENTER);
         setGravity(Gravity.CENTER_VERTICAL);
@@ -119,10 +119,12 @@ public class IVPopupButton extends android.support.v7.widget.AppCompatButton {
             final StringBuilder text = new StringBuilder();
             if (scanResult.getIVCombinationsCount() == 1 || high == low) { // Display something like "IV: 98%"
                 text.append(getContext().getString(
-                        R.string.iv_button_exact_result_preview_format, scanResult.pokemon.name, low));
+                        R.string.iv_button_exact_result_preview_format, scanResult.levelRange.min, scanResult.pokemon.name,
+                        low, scanResult.cp));
             } else { // Display something like "IV: 55 - 87%"
                 text.append(getContext().getString(
-                        R.string.iv_button_range_result_preview_format, scanResult.pokemon.name, low, high));
+                        R.string.iv_button_range_result_preview_format, scanResult.levelRange.min, scanResult.pokemon
+                                .name, low, high, scanResult.cp));
             }
             if (scanResult.levelRange.min != scanResult.levelRange.max) {
                 text.append("*");
@@ -131,6 +133,7 @@ public class IVPopupButton extends android.support.v7.widget.AppCompatButton {
 
             setBackgroundGradient(scanResult);
             setTextColorFromIVs(scanResult);
+           // pokefly.setArcPointer(scanResult.levelRange.min);
         }
     }
 
@@ -169,7 +172,7 @@ public class IVPopupButton extends android.support.v7.widget.AppCompatButton {
             int low = lowest.percentPerfect;
             int high = highest.percentPerfect;
 
-            setWidth(dpToPx(60));
+            setWidth(dpToPx(120));
             setBackgroundResource(R.drawable.preview_button_0_100);
 
             setGradientColor(getColorForPercentIV(low), getColorForPercentIV(high));

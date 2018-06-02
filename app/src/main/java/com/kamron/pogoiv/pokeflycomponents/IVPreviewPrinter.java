@@ -2,6 +2,7 @@ package com.kamron.pogoiv.pokeflycomponents;
 
 import android.graphics.Bitmap;
 import android.os.Handler;
+import android.util.Log;
 import android.widget.Toast;
 
 import com.kamron.pogoiv.GoIVSettings;
@@ -109,17 +110,20 @@ public class IVPreviewPrinter {
 
             ScanData data = ocr.scanPokemon(GoIVSettings.getInstance(pokefly), bmp, pokefly.getTrainerLevel(), false);
             if (!data.getPokemonHP().isPresent() || !data.getPokemonCP().isPresent()) {
+                Log.d("Test", "no HP or CP");
                 return false;
             }
 
             IVPreviewPrinter ivPreviewPrinter = ivPreviewPrinterRef.get();
             if (ivPreviewPrinter == null) {
+                Log.d("Test", "no iv preview printer");
                 return false; // The class that scheduled this runnable has been garbage collected
             }
 
             ScanResult scanResults = new ScanResult(pokemonNameCorrector, data);
             PokeInfoCalculator.getInstance().getIVPossibilities(scanResults);
             if (scanResults.getIVCombinationsCount() <= 0) { //unsuccessful scan
+                Log.d("Test", String.format("No IV combination count: CP = %d", data.getPokemonCP().get()));
                 return false;
             }
 

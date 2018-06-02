@@ -37,6 +37,8 @@ public class ScanResult {
     public final LevelRange levelRange;
     public final int cp;
     public int hp;
+    public int maxCpForLevel = 0;
+    public int minCpForLevel = 9999;
     private ArrayList<MovesetData> movesets;
     public MovesetData selectedMoveset;
     private ArrayList<IVCombination> iVCombinations = new ArrayList<>();
