@@ -59,8 +59,8 @@ public class ScanResult {
     /**
      * Creates a holder object for IV scan results.
      *
-     * @param pokemon        Which pokemon it is
-     * @param scanData       The OCR results
+     * @param pokemon  Which pokemon it is
+     * @param scanData The OCR results
      */
     public ScanResult(@NonNull Pokemon pokemon, @NonNull ScanData scanData) {
         this.pokemon = pokemon;
@@ -70,9 +70,9 @@ public class ScanResult {
         this.gender = scanData.getPokemonGender();
 
         LinkedHashSet<MovesetData> m;
-        try{
+        try {
             m = MovesetsManager.getMovesetsForDexNumber(pokemon.number);
-        }catch(NullPointerException e){
+        } catch (NullPointerException e) {
             m = null;
         }
 
@@ -364,9 +364,10 @@ public class ScanResult {
             return;
         }
 
-        Boolean[] knownAttDefSta = { highestStats.contains(AppraisalManager.HighestStat.ATK),
-                                     highestStats.contains(AppraisalManager.HighestStat.DEF),
-                                     highestStats.contains(AppraisalManager.HighestStat.STA) };
+        Boolean[] knownAttDefSta = {
+                highestStats.contains(AppraisalManager.HighestStat.ATK),
+                highestStats.contains(AppraisalManager.HighestStat.DEF),
+                highestStats.contains(AppraisalManager.HighestStat.STA)};
         ArrayList<IVCombination> refinedList = new ArrayList<>();
         for (IVCombination comb : iVCombinations) {
             if (Arrays.equals(comb.getHighestStatSignature(), knownAttDefSta)) {
@@ -380,6 +381,7 @@ public class ScanResult {
 
     /**
      * Removes any iv combination that is outside the scope of the input percentage range.
+     *
      * @param range IV percent range
      */
     private void refineByAppraisalPercentageRange(AppraisalManager.IVSumRange range) {
@@ -400,6 +402,7 @@ public class ScanResult {
 
     /**
      * Removes any iv combination where the highest IV is outside the scope of he input range.
+     *
      * @param range Range of the highest stat IV value
      */
     private void refineByAppraisalIVRange(AppraisalManager.IVValueRange range) {

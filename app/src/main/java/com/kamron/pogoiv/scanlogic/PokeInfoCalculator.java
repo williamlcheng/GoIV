@@ -12,6 +12,7 @@ import android.util.Log;
 import com.kamron.pogoiv.GoIVSettings;
 import com.kamron.pogoiv.R;
 
+import java.text.Normalizer;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -27,6 +28,7 @@ public class PokeInfoCalculator {
 
     private ArrayList<Pokemon> pokedex = new ArrayList<>();
     private String[] typeNamesArray;
+    private String[] pokeNamesWithForm = {};
 
     /**
      * Pokemons that aren't evolutions of any other one.
@@ -134,6 +136,27 @@ public class PokeInfoCalculator {
     }
 
     /**
+     * Return the full pokemon display names list, including forms.
+     *
+     * @return the full pokemon display names including forms as string array.
+     */
+    public String[] getPokemonNamesWithFormArray() {
+        if (pokeNamesWithForm.length != 0) {
+            return pokeNamesWithForm;
+        }
+
+        ArrayList<String> pokemonNamesArray = new ArrayList<>();
+        for (Pokemon poke : getPokedex()) {
+            for (Pokemon pokemonForm : getForms(poke)) {
+                pokemonNamesArray.add(pokemonForm.toString());
+            }
+        }
+
+        pokeNamesWithForm = pokemonNamesArray.toArray(new String[pokemonNamesArray.size()]);
+        return pokeNamesWithForm;
+    }
+
+    /**
      * Fills the list "pokemon" with the information of all pokemon by reading the
      * arrays in integers.xml and the names from the strings.xml resources.
      */
@@ -146,8 +169,10 @@ public class PokeInfoCalculator {
         final int[] devolution = res.getIntArray(R.array.devolutionNumber);
         final int[] evolutionCandyCost = res.getIntArray(R.array.evolutionCandyCost);
         final int[] candyNamesArray = res.getIntArray(R.array.candyNames);
+        final int[] formsCountIndex = res.getIntArray(R.array.formsCountIndex);
 
         int pokeListSize = names.length;
+        ArrayList<Pokemon> formVariantPokemons = new ArrayList<>();
         for (int i = 0; i < pokeListSize; i++) {
             Pokemon p = new Pokemon(names[i], displayNames[i], i, attack[i], defense[i], stamina[i], devolution[i],
                     evolutionCandyCost[i]);
@@ -166,104 +191,46 @@ public class PokeInfoCalculator {
                 candyPokemons.add(pokedex.get(candyNamesArray[i]));
                 basePokemons.add(pokedex.get(i));
             }
+
+            //Check for different pokemon forms, such as alolan forms, and add them to the formsCount.
+            if (formsCountIndex[i] != -1) {
+                int[] formsCount = res.getIntArray(R.array.formsCount);
+                int formsStartIndex = 0;
+
+                for (int j = 0; j < formsCountIndex[i]; j++) {
+                    formsStartIndex += formsCount[j];
+                }
+
+                for (int j = 0; j < formsCount[formsCountIndex[i]]; j++) {
+                    String formPokemonName = String.format("%s - %s", // [POKEMON_NAME] - [FORM_NAME]
+                            names[i], res.getStringArray(R.array.formNames)[formsStartIndex + j]);
+                    String formPokemonDisplayName = String.format("%s - %s", // [POKEMON_NAME] - [FORM_NAME]
+                            displayNames[i], res.getStringArray(R.array.formNames)[formsStartIndex + j]);
+                    Pokemon formPokemon = new Pokemon(
+                            formPokemonName, formPokemonDisplayName, i,
+                            res.getIntArray(R.array.formAttack)[formsStartIndex + j],
+                            res.getIntArray(R.array.formDefense)[formsStartIndex + j],
+                            res.getIntArray(R.array.formStamina)[formsStartIndex + j],
+                            devolution[i],
+                            evolutionCandyCost[i]);
+                    pokedex.get(i).forms.add(formPokemon);
+                    pokemap.put(formPokemonName.toLowerCase(), formPokemon);
+                    if (!formPokemon.equals(formPokemonDisplayName)) {
+                        pokemap.put(formPokemonDisplayName, formPokemon);
+                    }
+                    formVariantPokemons.add(formPokemon);
+                }
+            }
         }
 
+        // add evolutions to form variant pokemons instance if the normal form pokemon has its evolutions.
+        for (Pokemon formPokemon : formVariantPokemons) {
+            if (!pokedex.get(formPokemon.number).evolutions.isEmpty()) {
+                formPokemon.evolutions.addAll(pokedex.get(formPokemon.number).evolutions);
+            }
+        }
 
-        //Hardcoded temp-fix, adds alolan variants.
-        Pokemon exegguteHardcode = new Pokemon("Alolan Exeggutor", "Alolan Exeggutor", pokeListSize, 230, 158,
-                190, -1, -1);
-        pokedex.add(exegguteHardcode);
-        pokemap.put("alolan exeggutor", exegguteHardcode);
-
-        Pokemon p1 = new Pokemon("Alolan Rattata", "Alolan Rattata", pokeListSize + 1, 103, 70,
-                60, -1, -1);
-        pokedex.add(p1);
-        pokemap.put("alolan rattata", p1);
-
-
-        Pokemon p2 = new Pokemon("Alolan Raticate", "Alolan Raticate", pokeListSize + 2, 135, 159,
-                150, -1, -1);
-        pokedex.add(p2);
-        pokemap.put("alolan raticate", p2);
-
-
-        Pokemon p3 = new Pokemon("Alolan Raichu", "Alolan Raichu", pokeListSize + 3, 201, 172,
-                120, -1, -1);
-        pokedex.add(p3);
-        pokemap.put("alolan raichu", p3);
-
-
-        Pokemon p4 = new Pokemon("Alolan Sandshrew", "Alolan Sandshrew", pokeListSize + 4, 125, 154,
-                100, -1, -1);
-        pokedex.add(p4);
-        pokemap.put("alolan sandshrew", p4);
-
-        Pokemon p5 = new Pokemon("Alolan Sandslash", "Alolan Sandslash", pokeListSize + 5, 177, 221,
-                150, -1, -1);
-        pokedex.add(p5);
-        pokemap.put("alolan sandslash", p5);
-
-        Pokemon p6 = new Pokemon("Alolan Vulpix", "Alolan Vulpix", pokeListSize + 6, 96, 122,
-                76, -1, -1);
-        pokedex.add(p6);
-        pokemap.put("alolan vulpix", p6);
-
-        Pokemon p7 = new Pokemon("Alolan Ninetales", "Alolan Ninetales", pokeListSize + 7, 170, 207,
-                146, -1, -1);
-        pokedex.add(p7);
-        pokemap.put("alolan ninetales", p7);
-
-        Pokemon p8 = new Pokemon("Alolan Diglett", "Alolan Diglett", pokeListSize + 8, 108, 80,
-                20, -1, -1);
-        pokedex.add(p8);
-        pokemap.put("alolan diglett", p8);
-
-        Pokemon p9 = new Pokemon("Alolan Dugtrio", "Alolan Dugtrio", pokeListSize + 9, 201, 148,
-                70, -1, -1);
-        pokedex.add(p9);
-        pokemap.put("alolan dugtrio", p9);
-
-        Pokemon p10 = new Pokemon("Alolan Meowth", "Alolan Meowth", pokeListSize + 10, 99, 81,
-                80, -1, -1);
-        pokedex.add(p10);
-        pokemap.put("alolan meowth", p10);
-
-        Pokemon p11 = new Pokemon("Alolan Persian", "Alolan Persian", pokeListSize + 11, 150, 139,
-                130, -1, -1);
-        pokedex.add(p11);
-        pokemap.put("alolan persian", p11);
-
-        Pokemon p12 = new Pokemon("Alolan Geodude", "Alolan Geodude", pokeListSize + 12, 132, 163,
-                80, -1, -1);
-        pokedex.add(p12);
-        pokemap.put("alolan geodude", p12);
-
-        Pokemon p13 = new Pokemon("Alolan Graveler", "Alolan Graveler", pokeListSize + 13, 164, 196,
-                110, -1, -1);
-        pokedex.add(p13);
-        pokemap.put("alolan graveler", p13);
-
-        Pokemon p14 = new Pokemon("Alolan Golem", "Alolan Golem", pokeListSize + 14, 211, 229,
-                160, -1, -1);
-        pokedex.add(p14);
-        pokemap.put("alolan golem", p14);
-
-        Pokemon p15 = new Pokemon("Alolan Grimer", "Alolan Grimer", pokeListSize + 15, 135, 90,
-                160, -1, -1);
-        pokedex.add(p15);
-        pokemap.put("alolan grimer", p15);
-
-        Pokemon p16 = new Pokemon("Alolan Muk", "Alolan Muk", pokeListSize + 16, 190, 184,
-                210, -1, -1);
-        pokedex.add(p16);
-        pokemap.put("alolan muk", p16);
-
-
-        Pokemon p17 = new Pokemon("Alolan Marowak", "Alolan Marowak", pokeListSize + 17, 144, 200,
-                120, -1, -1);
-        pokedex.add(p17);
-        pokemap.put("alolan marowak", p17);
-
+        pokeNamesWithForm = getPokemonNamesWithFormArray();
     }
 
     /**
@@ -483,6 +450,25 @@ public class PokeInfoCalculator {
     }
 
     /**
+     * Get all the pokemon forms for a pokemon.
+     *
+     * @param poke a pokemon, example Exeggutor
+     * @return all the pokemon forms, in the example would return Exeggutor normal and Exeggutor Alola
+     */
+    private ArrayList<Pokemon> getForms(Pokemon poke) {
+        ArrayList<Pokemon> list = new ArrayList<>();
+        Pokemon normalFormPokemon = pokedex.get(poke.number);
+        list.add(normalFormPokemon);
+
+        if (normalFormPokemon.forms.isEmpty()) {
+            return list; // normal form only
+        }
+
+        list.addAll(normalFormPokemon.forms);
+        return list;
+    }
+
+    /**
      * Returns the evolution line of a pokemon.
      *
      * @param poke the pokemon to check the evolution line of
@@ -492,10 +478,12 @@ public class PokeInfoCalculator {
         poke = getLowestEvolution(poke);
 
         ArrayList<Pokemon> list = new ArrayList<>();
-        list.add(poke); //add self
-        list.addAll(poke.evolutions); //add all immediate evolutions
-        for (Pokemon evolution : poke.evolutions) {
-            list.addAll(evolution.evolutions);
+        list.addAll(getForms(poke));
+        for (Pokemon evolution2nd : poke.evolutions) {
+            list.addAll(getForms(evolution2nd));
+            for (Pokemon evolution3rd : evolution2nd.evolutions) {
+                list.addAll(getForms(evolution3rd));
+            }
         }
 
         return list;
@@ -519,7 +507,37 @@ public class PokeInfoCalculator {
         return Math.round((highHp + lowHp) / 2f);
     }
 
+    /**
+     * Returns the type name, such as fire or water, in the correct current locale name. However, special characters
+     * such as â, é etc are replaced with their normalized forms a, e etc. So they can be compared with what's
+     * scanned. (The ocr does not recognize special characters such as é).
+     * <p>
+     * Type numbers:
+     * <p>
+     * 0 normal <p>
+     * 1 fire<p>
+     * 2 water<p>
+     * 3 electric<p>
+     * 4 grass<p>
+     * 5 ice<p>
+     * 6 fighting<p>
+     * 7 poison<p>
+     * 8 ground<p>
+     * 9 flying<p>
+     * 10 psychic<p>
+     * 11 bug<p>
+     * 12 rock<p>
+     * 13 ghost<p>
+     * 14 dragon<p>
+     * 15 dark<p>
+     * 16 steel<p>
+     * 17 fairy<p>
+     *
+     * @param typeNameNum The number for the type to get the correct name for.
+     */
     public String getTypeName(int typeNameNum) {
-        return typeNamesArray[typeNameNum];
+        String cleanedType = Normalizer.normalize(typeNamesArray[typeNameNum], Normalizer.Form.NFD);
+        cleanedType = cleanedType.replaceAll("[^\\p{ASCII}]", "");
+        return cleanedType;
     }
 }
